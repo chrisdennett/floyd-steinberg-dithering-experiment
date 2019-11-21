@@ -3,9 +3,16 @@ import ErrorBoundary from "./ErrorBoundary";
 import {
   createSmallCanvas,
   drawCanvas,
-  createThresholdCanvas
+  createThresholdCanvas,
+  createCanvasData,
+  drawImageToCanvas,
+  createBrightnessCanvas
 } from "./helpers";
-import { createDitheredCanvas } from "./ditheredCanvasHelper";
+import {
+  createDitheredCanvas,
+  updatePixelDataWithDitherInfo,
+  createQuantErrorCanvas
+} from "./ditheredCanvasHelper";
 
 const App = () => {
   return (
@@ -16,54 +23,67 @@ const App = () => {
 };
 
 const Content = () => {
-  const [sourceImg, setSourceImg] = useState(null);
-  const [targPixelIndex, setTargPixelIndex] = useState(570);
-  const canvasRef = React.useRef(null);
+  const [sourceCanvasData, setSourceCanvasData] = useState(null);
+  const ditherCanvasRef = React.useRef(null);
   const origCanvasRef = React.useRef(null);
+  const brightnessCanvasRef = React.useRef(null);
   const thresholdCanvasRef = React.useRef(null);
+  const quantErrorCanvasRef = React.useRef(null);
   const blockSize = 1;
-  const maxWidth = 397;
 
   useEffect(() => {
-    if (!sourceImg) {
+    if (!sourceCanvasData) {
       const image = new Image();
       image.crossOrigin = "Anonymous";
       image.onload = () => {
-        setSourceImg(image);
+        drawCanvas(origCanvasRef.current, image);
+        const tempCanvas = drawImageToCanvas(image);
+
+        // nned to get brightness data first
+        const _sourceCanvasData = createCanvasData(tempCanvas);
+
+        // then use that to add quantisation error an dither value
+        updatePixelDataWithDitherInfo(
+          _sourceCanvasData.pixelData,
+          _sourceCanvasData.width
+        );
+
+        setSourceCanvasData(_sourceCanvasData);
       };
       image.src = "doug.png";
     } else {
-      const wToHRatio = sourceImg.height / sourceImg.width;
-      const maxHeight = maxWidth * wToHRatio;
-
       // const testGreyCanvas = createTestGreyCanvas();
-      const smallCanvas = createSmallCanvas(sourceImg, maxWidth, maxHeight);
-
-      const ditheredCanvas = createDitheredCanvas(
-        smallCanvas,
-        targPixelIndex,
+      const brightnessCanvas = createBrightnessCanvas(
+        sourceCanvasData,
         blockSize
       );
 
-      const thresholdCanvas = createThresholdCanvas(smallCanvas, blockSize);
+      const thresholdCanvas = createThresholdCanvas(
+        sourceCanvasData,
+        blockSize
+      );
 
-      drawCanvas(origCanvasRef.current, sourceImg);
+      const ditheredCanvas = createDitheredCanvas(sourceCanvasData, blockSize);
+
+      const quantErrorCanvas = createQuantErrorCanvas(
+        sourceCanvasData,
+        blockSize
+      );
+
+      drawCanvas(brightnessCanvasRef.current, brightnessCanvas);
       drawCanvas(thresholdCanvasRef.current, thresholdCanvas);
-      drawCanvas(canvasRef.current, ditheredCanvas);
+      drawCanvas(quantErrorCanvasRef.current, quantErrorCanvas);
+      drawCanvas(ditherCanvasRef.current, ditheredCanvas);
     }
   });
 
   return (
     <>
-      <div>
-        <button onClick={() => setTargPixelIndex(targPixelIndex + 1)}>
-          Next
-        </button>
-        <span> Target Pixel Index: {targPixelIndex}</span>
-      </div>
-      <canvas ref={origCanvasRef} />;
-      <canvas ref={thresholdCanvasRef} />;
-      <canvas ref={canvasRef} />;
+      <canvas ref={origCanvasRef} />
+      <canvas ref={brightnessCanvasRef} />
+      <canvas ref={thresholdCanvasRef} />
+      <canvas ref={quantErrorCanvasRef} />
+      <canvas ref={ditherCanvasRef} />
     </>
   );
 };

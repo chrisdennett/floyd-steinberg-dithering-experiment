@@ -6,30 +6,41 @@ export const drawCanvas = (targetCanvas, source) => {
   ctx.drawImage(source, 0, 0);
 };
 
-export const createThresholdCanvas = (inputCanvas, blockSize) => {
-  const { width: inputW, height: inputH } = inputCanvas;
-
+export const createThresholdCanvas = (sourceCanvasData, blockSize) => {
   const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = inputW * blockSize;
-  outputCanvas.height = inputH * blockSize;
+  outputCanvas.width = sourceCanvasData.width * blockSize;
+  outputCanvas.height = sourceCanvasData.height * blockSize;
   const outputCtx = outputCanvas.getContext("2d");
 
-  const inputCtx = inputCanvas.getContext("2d");
-  let imgData = inputCtx.getImageData(0, 0, inputW, inputH);
-  let pixels = imgData.data;
+  sourceCanvasData.pixelData.forEach(pixel => {
+    const blackOrWhite = pixel.brightness > 127 ? 255 : 0;
+    outputCtx.fillStyle = `rgb(${blackOrWhite},${blackOrWhite},${blackOrWhite})`;
+    outputCtx.fillRect(
+      pixel.x * blockSize,
+      pixel.y * blockSize,
+      blockSize,
+      blockSize
+    );
+  });
 
-  for (let y = 0; y < inputH; y++) {
-    for (let x = 0; x < inputW; x++) {
-      const i = (y * inputW + x) * 4;
+  return outputCanvas;
+};
 
-      const brightness = getPixelBrightness(pixels, i);
+export const createBrightnessCanvas = (sourceCanvasData, blockSize) => {
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = sourceCanvasData.width * blockSize;
+  outputCanvas.height = sourceCanvasData.height * blockSize;
+  const outputCtx = outputCanvas.getContext("2d");
 
-      const blackOrWhite = brightness > 127 ? 255 : 0;
-
-      outputCtx.fillStyle = `rgb(${blackOrWhite},${blackOrWhite},${blackOrWhite})`;
-      outputCtx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
-    }
-  }
+  sourceCanvasData.pixelData.forEach(pixel => {
+    outputCtx.fillStyle = `rgb(${pixel.brightness},${pixel.brightness},${pixel.brightness})`;
+    outputCtx.fillRect(
+      pixel.x * blockSize,
+      pixel.y * blockSize,
+      blockSize,
+      blockSize
+    );
+  });
 
   return outputCanvas;
 };
@@ -63,6 +74,17 @@ export const createSmallCanvas = (source, maxWidth, maxHeight) => {
   return smallCanvas;
 };
 
+export const drawImageToCanvas = img => {
+  const outputCanvas = document.createElement("canvas");
+  const ctx = outputCanvas.getContext("2d");
+  outputCanvas.width = img.width;
+  outputCanvas.height = img.height;
+
+  ctx.drawImage(img, 0, 0);
+
+  return outputCanvas;
+};
+
 export const createTestGreyCanvas = (w = 100, h = 100, grey = 127) => {
   const outputCanvas = document.createElement("canvas");
   outputCanvas.width = w;
@@ -78,6 +100,49 @@ export const createTestGreyCanvas = (w = 100, h = 100, grey = 127) => {
 export const drawPixelBlock = ({ ctx, x, y, blockSize, colour }) => {
   ctx.fillStyle = colour;
   ctx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
+};
+
+export const createCanvasData = canvas => {
+  return {
+    width: canvas.width,
+    height: canvas.height,
+    pixelData: createPixelData(canvas)
+  };
+};
+
+const createPixelData = inputCanvas => {
+  const { width: inputW, height: inputH } = inputCanvas;
+  const inputCtx = inputCanvas.getContext("2d");
+  let imgData = inputCtx.getImageData(0, 0, inputW, inputH);
+  let rgbaPixels = imgData.data;
+  const brightnessArray = [];
+
+  for (let rIndex = 0; rIndex < rgbaPixels.length; rIndex += 4) {
+    const brightness = getPixelBrightness(rgbaPixels, rIndex);
+
+    const index = rIndex / 4;
+    const x = index % inputW;
+    const y = Math.floor(index / inputW);
+
+    const onRightEdge = isOnRightEdge(index, inputW);
+    const onLeftEdge = x === 0;
+    const onBottomEdge = isOnBottomEdge(index, inputW, inputH);
+
+    const ditheredQuantisation = -1; // set default value
+    const quantErrorToAdd = 0; // set default value
+    brightnessArray.push({
+      x,
+      y,
+      onLeftEdge,
+      onRightEdge,
+      onBottomEdge,
+      brightness,
+      ditheredQuantisation,
+      quantErrorToAdd
+    });
+  }
+
+  return brightnessArray;
 };
 
 export const isOnRightEdge = (sourceIndex, width) => {

@@ -1,76 +1,38 @@
-import {
-  getLocationFromIndex,
-  getPixelBrightness,
-  isOnRightEdge,
-  isOnBottomEdge,
-  drawPixelBlock
-} from "./helpers";
+import { drawPixelBlock } from "./helpers";
 
-export const createDitheredCanvas = (
-  inputCanvas,
-  targPixelIndex,
-  blockSize
-) => {
-  const { width: inputW, height: inputH } = inputCanvas;
-
+export const createDitheredCanvas = (sourceCanvasData, blockSize) => {
   const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = inputW * blockSize;
-  outputCanvas.height = inputH * blockSize;
+  outputCanvas.width = sourceCanvasData.width * blockSize;
+  outputCanvas.height = sourceCanvasData.height * blockSize;
   const ctx = outputCanvas.getContext("2d");
 
-  const inputCtx = inputCanvas.getContext("2d");
-  let imgData = inputCtx.getImageData(0, 0, inputW, inputH);
-  let pixelColourArray = imgData.data;
-
-  const pixelDataArray = createPixelDataArrayFromPixelColorArray(
-    pixelColourArray
-  );
-
-  const ditheredArray = createDitheredArray(
-    pixelDataArray,
-    inputW,
-    inputH,
-    targPixelIndex
-  );
-
-  for (let i = 0; i < ditheredArray.length; i++) {
-    const pixelData = ditheredArray[i];
-    const { ditheredQuantisation } = pixelData;
-
-    let colour = pixelData.colour
-      ? pixelData.colour
-      : `rgb(${ditheredQuantisation},${ditheredQuantisation},${ditheredQuantisation})`;
-
-    const { x, y } = getLocationFromIndex(i, inputW);
+  sourceCanvasData.pixelData.forEach(pixel => {
+    const { ditheredQuantisation, x, y } = pixel;
+    let colour = `rgb(${ditheredQuantisation},${ditheredQuantisation},${ditheredQuantisation})`;
     drawPixelBlock({ ctx, x, y, blockSize, colour });
-  }
+  });
 
   return outputCanvas;
 };
 
-const createPixelDataArrayFromPixelColorArray = rgbaPixels => {
-  const brightnessArray = [];
+export const createQuantErrorCanvas = (sourceCanvasData, blockSize) => {
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = sourceCanvasData.width * blockSize;
+  outputCanvas.height = sourceCanvasData.height * blockSize;
+  const ctx = outputCanvas.getContext("2d");
 
-  for (let rIndex = 0; rIndex < rgbaPixels.length; rIndex += 4) {
-    const brightness = getPixelBrightness(rgbaPixels, rIndex);
+  sourceCanvasData.pixelData.forEach(pixel => {
+    const { quantisationError, x, y } = pixel;
+    let colour = `rgb(${quantisationError},${quantisationError},${quantisationError})`;
+    drawPixelBlock({ ctx, x, y, blockSize, colour });
+  });
 
-    const ditheredQuantisation = 0; // set default value
-    const quantErrorToAdd = 0; // set default value
-    brightnessArray.push({
-      brightness,
-      ditheredQuantisation,
-      quantErrorToAdd
-    });
-  }
-
-  return brightnessArray;
+  return outputCanvas;
 };
 
-const createDitheredArray = (
+export const updatePixelDataWithDitherInfo = (
   sourcePixelDataArray,
-  pixelWidth,
-  pixelHeight,
-  targPixelIndex
+  pixelWidth
 ) => {
   const totalPixels = sourcePixelDataArray.length;
 
@@ -96,43 +58,40 @@ const createDitheredArray = (
     const bottomRightIndex = bottomPixelIndex + 1;
     const bottomLeftIndex = bottomPixelIndex - 1;
 
-    const onRightEdge = isOnRightEdge(i, pixelWidth);
-    const onLeftEdge = i % pixelWidth === 0;
-    const onBottomEdge = isOnBottomEdge(i, pixelWidth, pixelHeight);
     let rightPixelData,
       bottomPixelData,
       bottomLeftPixelData,
       bottomRightPixelData;
 
-    if (!onRightEdge) {
+    if (!sourcePixelData.onRightEdge) {
       rightPixelData = sourcePixelDataArray[rightPixelIndex];
       rightPixelData.quantErrorToAdd += rightErrorFraction;
     }
 
-    if (!onBottomEdge) {
+    if (!sourcePixelData.onBottomEdge) {
       bottomPixelData = sourcePixelDataArray[bottomPixelIndex];
       bottomPixelData.quantErrorToAdd += bottomErrorFraction;
     }
 
-    if (!onLeftEdge && !onBottomEdge) {
+    if (!sourcePixelData.onLeftEdge && !sourcePixelData.onBottomEdge) {
       bottomLeftPixelData = sourcePixelDataArray[bottomLeftIndex];
       bottomLeftPixelData.quantErrorToAdd += bottomLeftErrorFraction;
     }
 
-    if (!onRightEdge && !onBottomEdge) {
+    if (!sourcePixelData.onRightEdge && !sourcePixelData.onBottomEdge) {
       bottomRightPixelData = sourcePixelDataArray[bottomRightIndex];
       bottomRightPixelData.quantErrorToAdd += bottomRightErrorFraction;
-    }
-
-    if (i === targPixelIndex) {
-      sourcePixelData.colour = "#ff0000";
-
-      if (rightPixelData) rightPixelData.colour = "#00FF00";
-      if (bottomRightPixelData) bottomRightPixelData.colour = "#FFFF00";
-      if (bottomPixelData) bottomPixelData.colour = "#00FFFF";
-      if (bottomLeftPixelData) bottomLeftPixelData.colour = "#FF00FF";
     }
   }
 
   return sourcePixelDataArray;
 };
+
+// if (i === targPixelIndex) {
+//     sourcePixelData.colour = "#ff0000";
+
+//     if (rightPixelData) rightPixelData.colour = "#00FF00";
+//     if (bottomRightPixelData) bottomRightPixelData.colour = "#FFFF00";
+//     if (bottomPixelData) bottomPixelData.colour = "#00FFFF";
+//     if (bottomLeftPixelData) bottomLeftPixelData.colour = "#FF00FF";
+//   }
