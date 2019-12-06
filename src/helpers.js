@@ -6,6 +6,24 @@ export const drawCanvas = (targetCanvas, source) => {
   ctx.drawImage(source, 0, 0);
 };
 
+export const drawCanvasArea = (
+  targetCanvas,
+  source,
+  x = 0,
+  y = 0,
+  width = 100,
+  height = 100
+) => {
+  const ctx = targetCanvas.getContext("2d");
+  targetCanvas.width = width;
+  targetCanvas.height = height;
+
+  console.log("targetCanvas.height: ", targetCanvas.height);
+
+  // void ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+  ctx.drawImage(source, x, y, width, height, 0, 0, width, height);
+};
+
 export const createThresholdCanvas = (sourceCanvasData, blockSize) => {
   const outputCanvas = document.createElement("canvas");
   outputCanvas.width = sourceCanvasData.width * blockSize;
@@ -15,6 +33,25 @@ export const createThresholdCanvas = (sourceCanvasData, blockSize) => {
   sourceCanvasData.pixelData.forEach(pixel => {
     const blackOrWhite = pixel.brightness > 127 ? 255 : 0;
     outputCtx.fillStyle = `rgb(${blackOrWhite},${blackOrWhite},${blackOrWhite})`;
+    outputCtx.fillRect(
+      pixel.x * blockSize,
+      pixel.y * blockSize,
+      blockSize,
+      blockSize
+    );
+  });
+
+  return outputCanvas;
+};
+
+export const createColourCanvas = (sourceCanvasData, blockSize) => {
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = sourceCanvasData.width * blockSize;
+  outputCanvas.height = sourceCanvasData.height * blockSize;
+  const outputCtx = outputCanvas.getContext("2d");
+
+  sourceCanvasData.pixelData.forEach(pixel => {
+    outputCtx.fillStyle = pixel.colour;
     outputCtx.fillRect(
       pixel.x * blockSize,
       pixel.y * blockSize,
@@ -119,6 +156,9 @@ const createPixelData = inputCanvas => {
 
   for (let rIndex = 0; rIndex < rgbaPixels.length; rIndex += 4) {
     const brightness = getPixelBrightness(rgbaPixels, rIndex);
+    const colour = `rgb(${rgbaPixels[rIndex]}, ${rgbaPixels[rIndex + 1]}, ${
+      rgbaPixels[rIndex + 2]
+    })`;
 
     const index = rIndex / 4;
     const x = index % inputW;
@@ -137,6 +177,7 @@ const createPixelData = inputCanvas => {
       onRightEdge,
       onBottomEdge,
       brightness,
+      colour,
       ditheredQuantisation,
       quantErrorToAdd
     });
