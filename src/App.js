@@ -21,7 +21,7 @@ const Content = () => {
   const canvasRef = React.useRef(null);
   const origCanvasRef = React.useRef(null);
   const thresholdCanvasRef = React.useRef(null);
-  const blockSize = 1;
+  const blockSize = 3;
   const maxWidth = 397;
 
   useEffect(() => {
@@ -31,7 +31,7 @@ const Content = () => {
       image.onload = () => {
         setSourceImg(image);
       };
-      image.src = "doug.png";
+      image.src = "Dorothy-Wordsworth.png";
     } else {
       const wToHRatio = sourceImg.height / sourceImg.width;
       const maxHeight = maxWidth * wToHRatio;
@@ -61,9 +61,9 @@ const Content = () => {
         </button>
         <span> Target Pixel Index: {targPixelIndex}</span>
       </div>
+      <canvas ref={canvasRef} />;
       <canvas ref={origCanvasRef} />;
       <canvas ref={thresholdCanvasRef} />;
-      <canvas ref={canvasRef} />;
     </>
   );
 };
