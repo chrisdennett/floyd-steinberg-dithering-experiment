@@ -7,8 +7,8 @@ import {
   createCanvasData,
   drawImageToCanvas,
   createBrightnessCanvas,
-  createColourCanvas,
-  drawCanvasArea
+  createColourCanvas
+  // drawCanvasArea
 } from "./helpers";
 import {
   createDitheredCanvas,
@@ -27,11 +27,11 @@ const Content = () => {
   const [sourceCanvasData, setSourceCanvasData] = useState(null);
   //
   const ditherCanvasRef = React.useRef(null);
-  const origCanvasRef = React.useRef(null);
-  const brightnessCanvasRef = React.useRef(null);
-  const thresholdCanvasRef = React.useRef(null);
+  // const origCanvasRef = React.useRef(null);
+  // const brightnessCanvasRef = React.useRef(null);
+  // const thresholdCanvasRef = React.useRef(null);
   //
-  const blockSize = 10;
+  const blockSize = 1;
 
   useEffect(() => {
     if (!sourceCanvasData) {
@@ -51,7 +51,9 @@ const Content = () => {
 
         setSourceCanvasData(_sourceCanvasData);
       };
-      image.src = "doug.png";
+      image.src = "jen-white-bg.jpg";
+      // image.src = "doug.png";
+      // image.src = "apple_400x267.jpg";
     } else {
       const colourCanvas = createColourCanvas(sourceCanvasData, blockSize);
 
@@ -71,42 +73,42 @@ const Content = () => {
       // drawCanvas(origCanvasRef.current, colourCanvas);
       // drawCanvas(brightnessCanvasRef.current, brightnessCanvas);
       // drawCanvas(thresholdCanvasRef.current, thresholdCanvas);
-      // drawCanvas(ditherCanvasRef.current, ditheredCanvas);
+      drawCanvas(ditherCanvasRef.current, ditheredCanvas);
 
-      const area = { x: 1240, y: 1300, w: 600, h: 400 };
+      // const area = { x: 1240, y: 1300, w: 600, h: 400 };
 
-      drawCanvasArea(
-        origCanvasRef.current,
-        colourCanvas,
-        area.x,
-        area.y,
-        area.w,
-        area.h
-      );
-      drawCanvasArea(
-        brightnessCanvasRef.current,
-        brightnessCanvas,
-        area.x,
-        area.y,
-        area.w,
-        area.h
-      );
-      drawCanvasArea(
-        thresholdCanvasRef.current,
-        thresholdCanvas,
-        area.x,
-        area.y,
-        area.w,
-        area.h
-      );
-      drawCanvasArea(
-        ditherCanvasRef.current,
-        ditheredCanvas,
-        area.x,
-        area.y,
-        area.w,
-        area.h
-      );
+      // drawCanvasArea(
+      //   origCanvasRef.current,
+      //   colourCanvas,
+      //   area.x,
+      //   area.y,
+      //   area.w,
+      //   area.h
+      // );
+      // drawCanvasArea(
+      //   brightnessCanvasRef.current,
+      //   brightnessCanvas,
+      //   area.x,
+      //   area.y,
+      //   area.w,
+      //   area.h
+      // );
+      // drawCanvasArea(
+      //   thresholdCanvasRef.current,
+      //   thresholdCanvas,
+      //   area.x,
+      //   area.y,
+      //   area.w,
+      //   area.h
+      // );
+      // drawCanvasArea(
+      //   ditherCanvasRef.current,
+      //   ditheredCanvas,
+      //   area.x,
+      //   area.y,
+      //   area.w,
+      //   area.h
+      // );
     }
   });
 
@@ -126,9 +128,6 @@ const Content = () => {
     topLeft: 1240, 1380
     */
 
-    console.log("blockX: ", blockX);
-    console.log("blockY: ", blockY);
-
     const ctx = targCanvas.getContext("2d");
     ctx.fillStyle = "#FF0000";
     ctx.fillRect(blockX, blockY, blockSize, blockSize);
@@ -136,9 +135,9 @@ const Content = () => {
 
   return (
     <CanvasHolderStyled>
-      <canvas ref={origCanvasRef} onClick={onCanvasClick} />
+      {/* <canvas ref={origCanvasRef} onClick={onCanvasClick} />
       <canvas ref={brightnessCanvasRef} onClick={onCanvasClick} />
-      <canvas ref={thresholdCanvasRef} onClick={onCanvasClick} />
+      <canvas ref={thresholdCanvasRef} onClick={onCanvasClick} /> */}
       <canvas ref={ditherCanvasRef} onClick={onCanvasClick} />
     </CanvasHolderStyled>
   );
@@ -149,4 +148,8 @@ export default App;
 const CanvasHolderStyled = styled.div`
   display: flex;
   flex-wrap: wrap;
+
+  canvas {
+    border: red 1px solid;
+  }
 `;
