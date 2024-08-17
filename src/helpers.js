@@ -1,7 +1,14 @@
-export const drawCanvas = (targetCanvas, source) => {
+export const drawCanvas = (targetCanvas, source, width) => {
   const ctx = targetCanvas.getContext("2d");
-  targetCanvas.width = source.width;
-  targetCanvas.height = source.height;
+
+  if (!width) {
+    targetCanvas.width = source.width;
+    targetCanvas.height = source.height;
+  } else {
+    const wToHRatio = source.height / source.width;
+    targetCanvas.width = width;
+    targetCanvas.height = width * wToHRatio;
+  }
 
   ctx.drawImage(source, 0, 0);
 };
